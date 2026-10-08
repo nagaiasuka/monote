@@ -31,6 +31,16 @@ SQLiteテストはNodeの`node:sqlite`を使うためNode 22.13以降が必要�
 
 ## iOS Development Build
 
+### VS Codeから起動する
+
+このディレクトリをVS Codeで開き、`⌘⇧B`（Command + Shift + B）を押すと起動する。`⌘⇧P` → **タスク: タスクの実行**（Tasks: Run Task）→ **MONOTE: 起動**からも実行できる。開発サーバーとiPhoneシミュレーターが起動する。コード編集と起動操作はVS Codeで行い、iOSの画面はSimulatorの別ウィンドウに表示する。
+
+ターミナルからは`bash scripts/dev-ios.sh`でも起動できる。Node.jsを確認し、インストール済みのDevelopment Buildまたは保存済みのビルド成果物を使う。どちらもなければASCIIパスで初回ビルドを行う。今回のセッションでは検証に使ったNode 22とビルド成果物も利用できる。別環境では上のセットアップでNode 22と依存関係を準備する。
+
+`app/`や`src/`の変更は保存時にFast Refreshで反映する。Swift・ネイティブ設定を変更した場合は**MONOTE: iOSを再ビルド**を実行し、完了後に**MONOTE: 起動**を実行する。ビルドは既存データを削除しない。タスクを終了すると、そのタスクが起動した開発サーバーも停止する。既存のMONOTEサーバーを再利用した場合は、そのサーバーのターミナルから停止する。
+
+### CLIによるビルド
+
 ```sh
 npm run prebuild:ios
 npm run ios

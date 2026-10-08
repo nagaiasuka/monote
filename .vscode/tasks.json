@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MONOTE: 起動",
+      "type": "shell",
+      "command": "bash",
+      "args": ["scripts/dev-ios.sh"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "monote",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+): (error|warning): (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^MONOTE: 起動を準備",
+          "endsPattern": "^MONOTE: 起動しました"
+        }
+      }
+    },
+    {
+      "label": "MONOTE: iOSを再ビルド",
+      "type": "shell",
+      "command": "bash",
+      "args": ["scripts/build-ios-ascii.sh"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    }
+  ]
+}
