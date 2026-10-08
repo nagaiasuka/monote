@@ -41,7 +41,9 @@
     "prebuild:ios": "expo prebuild --platform ios",
     "test:swift": "bash scripts/test-swift.sh",
     "format": "prettier --write \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" *.json .prettierrc.json",
-    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" *.json .prettierrc.json"
+    "format:check": "prettier --check \"app/**/*.{ts,tsx}\" \"src/**/*.{ts,tsx}\" \"tests/**/*.ts\" *.json .prettierrc.json",
+    "dev:device": "bash scripts/dev-device-server.sh",
+    "build:device": "bash scripts/build-ios-ascii.sh --device"
   },
   "private": true,
   "engines": {

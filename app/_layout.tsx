@@ -48,9 +48,11 @@ function Navigation() {
           headerTintColor: c.text,
           contentStyle: { backgroundColor: c.bg },
           headerBackButtonDisplayMode: 'minimal',
+          headerShadowVisible: false,
+          headerTitleStyle: { fontSize: 16, fontWeight: '500' },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'MONOTE' }} />
+        <Stack.Screen name="index" options={{ title: 'MONOTE', headerShown: false }} />
         <Stack.Screen name="books/index" options={{ title: '本棚' }} />
         <Stack.Screen name="books/[id]" options={{ title: '書籍' }} />
         <Stack.Screen name="books/edit" options={{ title: '書籍の登録・編集' }} />

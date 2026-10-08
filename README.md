@@ -39,6 +39,20 @@ SQLiteテストはNodeの`node:sqlite`を使うためNode 22.13以降が必要�
 
 `app/`や`src/`の変更は保存時にFast Refreshで反映する。Swift・ネイティブ設定を変更した場合は**MONOTE: iOSを再ビルド**を実行し、完了後に**MONOTE: 起動**を実行する。ビルドは既存データを削除しない。タスクを終了すると、そのタスクが起動した開発サーバーも停止する。既存のMONOTEサーバーを再利用した場合は、そのサーバーのターミナルから停止する。
 
+### iPhone実機で開発する
+
+1. iPhoneをUSBでMacに接続し、ロックを解除して「このコンピュータを信頼」を許可する。
+2. Xcode → Settings → Apple AccountsでApple Accountを設定する。実機用Apple Development証明書とプロビジョニングが必要。
+3. iPhoneの設定 → プライバシーとセキュリティ → デベロッパモードを有効にする。表示されない場合は先にXcodeとペアリングする。再起動・確認が必要。
+4. VS Codeのタスクから **MONOTE: 実機ビルド・インストール** を実行し、接続したiPhoneと署名Teamを選択する。CLIでは`npm run build:device`。日本語パスを避けた一時コピーでネイティブアプリをビルドする。署名できなければ表示されたworkspaceをXcodeで開き、Signing & CapabilitiesでTeamとAutomatically manage signingを設定して、そのiPhoneを選択しRunする。一時コピーの場所は`.expo/monote-device-project.txt`にも記録する。
+5. MacとiPhoneを同じWi-Fiに接続し、元のVS Codeで **MONOTE: 実機サーバー**（`npm run dev:device`）を起動する。表示されたQRコードをiPhoneのカメラで読み取り、インストール済みのモノートで開く。初回はローカルネットワーク接続を許可する。
+
+以降はVS Codeで`app/`・`src/`を保存すると実機に反映する。Swiftやネイティブ設定を変更した場合は実機ビルドを再実行する。シミュレーター用タスクは8091、実機サーバーは8092を使用。USB接続だけではMacの開発サーバーへ接続できるとは限らないため、同じWi-Fiを使用する。
+
+この手順は用意済みだが、実機への署名・インストール・音声入力はまだ未検証。確認時点では登録済みiPhoneはオフラインで、このMacに有効なコード署名証明書は見つからなかった。
+
+参考：[Expoのローカルビルド](https://docs.expo.dev/guides/local-app-development/)、[Appleの実機実行と署名](https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices)、[デベロッパモード](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device)。
+
 ### CLIによるビルド
 
 ```sh
@@ -66,7 +80,7 @@ npm start
 
 1. 本棚から本を追加。最初の本を現在の本として選択する。
 2. 写真ライブラリから表紙を選択、必要に応じて別の本を現在の本にする。
-3. 「文字でメモを書く」または「音声メモをはじめる」。音声入力の初回はマイクと音声認識を許可する。
+3. 「文字でメモを書く」または「声でメモを残す」。音声入力の初回はマイクと音声認識を許可する。
 4. 「音声入力を開始」で日本語の入力。終了する際はひと呼吸置いて「メモ終了」と発話し、その後も間を空ける。
 5. 無音終了、UI終了、55秒上限でも入力を終了。保存失敗・割り込みはホームの「保護された下書き」から確認できる。
 
