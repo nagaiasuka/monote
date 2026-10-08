@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "MONOTE",
+    "slug": "monote",
+    "scheme": "monote",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/monote-icon.png",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.nagaiasuka.monote",
+      "infoPlist": {
+        "CFBundleDisplayName": "モノート",
+        "NSMicrophoneUsageDescription": "話した言葉を読書メモとして記録するためにマイクを使用します。",
+        "NSSpeechRecognitionUsageDescription": "音声を端末内で日本語の読書メモに変換します。",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-dev-client",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "本の表紙に使う写真を選択します。",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
