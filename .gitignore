@@ -8,6 +8,8 @@ build/
 .env
 .env.*
 *.p12
+*.p8
+*.pfx
 *.mobileprovision
 *.pem
 *.key
