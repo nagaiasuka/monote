@@ -39,6 +39,23 @@ SQLiteテストはNodeの`node:sqlite`を使うためNode 22.13以降が必要�
 
 `app/`や`src/`の変更は保存時にFast Refreshで反映する。Swift・ネイティブ設定を変更した場合は**MONOTE: iOSを再ビルド**を実行し、完了後に**MONOTE: 起動**を実行する。ビルドは既存データを削除しない。タスクを終了すると、そのタスクが起動した開発サーバーも停止する。既存のMONOTEサーバーを再利用した場合は、そのサーバーのターミナルから停止する。
 
+### Xcodeで開く
+
+継続開発用には`/tmp`の一時プロジェクトを使わない。日本語パスによるPodsエラーを避けるため、元のソースを維持したまま恒久的なASCIIパスにコピーを用意する。
+
+```sh
+bash scripts/prepare-xcode.sh
+open -a Xcode "$HOME/Developer/monote-xcode/ios/MONOTE.xcworkspace"
+```
+
+初回はNode 22・依存関係・Podsを導入する。保存先は`~/Developer/monote-xcode`。`MONOTE_XCODE_ROOT`で別のASCIIパスに変更できる。Xcodeで開くのは`.xcworkspace`。起動先が見えず「Failed to open document」と表示される場合、まずこの手順で有効なworkspaceを開く。
+
+XcodeでiPhoneを選び、Teamを設定してRunする。UI変更のFast Refresh用サーバーは元のMONOTEで`npm run dev:device`を実行する。Swiftの編集は元の`modules/monote-speech/ios/`で行い、`prepare-xcode.sh`でコピーを更新してから再ビルドする。既存の生成`ios/`を保持するため、`app.json`やconfig pluginを変更した場合はコピー側で`npx expo prebuild --platform ios --no-install`と`pod install`を実行し、署名Teamを再確認する。
+
+`prepare-xcode.sh`とASCIIビルドはPods生成後にExpoとReactのビルド方式を検査する。Reactの配布サーバーへの接続に失敗してReactだけソースビルドへ切り替わると、Expoの事前ビルドライブラリが要求する`React.framework`が不足し、ビルド成功後も起動時に`dyld`で終了する。この場合はネットワークを確認して`pod install`を再実行する。検査が失敗した構成では実機ビルドを進めない。
+
+ビルド済みアプリの実行時ライブラリを検査するには`node scripts/verify-ios-app.cjs /path/to/MONOTE.app`を使用。これは同梱framework内の`@rpath`依存先が存在するか確認し、実機上の機能テストとは区別する。
+
 ### iPhone実機で開発する
 
 1. iPhoneをUSBでMacに接続し、ロックを解除して「このコンピュータを信頼」を許可する。

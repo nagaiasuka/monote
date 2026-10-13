@@ -17,6 +17,7 @@ npm ci
 npx expo prebuild --platform ios --no-install
 cd ios
 LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install
+node "$TASK_PROJECT_ROOT/scripts/verify-ios-dependencies.cjs" "$TASK_BUILD_ROOT/ios"
 cd ..
 if [ "$TASK_BUILD_MODE" = "--device" ]; then
   mkdir -p "$TASK_PROJECT_ROOT/.expo"
@@ -28,6 +29,7 @@ if [ "$TASK_BUILD_MODE" = "--device" ]; then
   exit 0
 fi
 xcodebuild -workspace ios/MONOTE.xcworkspace -scheme MONOTE -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$TASK_BUILD_ROOT/derived" CODE_SIGNING_ALLOWED=NO build
+node "$TASK_PROJECT_ROOT/scripts/verify-ios-app.cjs" "$TASK_BUILD_ROOT/derived/Build/Products/Debug-iphonesimulator/MONOTE.app"
 echo "Simulator app: $TASK_BUILD_ROOT/derived/Build/Products/Debug-iphonesimulator/MONOTE.app"
 mkdir -p "$TASK_PROJECT_ROOT/.expo"
 printf '%s\n' "$TASK_BUILD_ROOT/derived/Build/Products/Debug-iphonesimulator/MONOTE.app" > "$TASK_PROJECT_ROOT/.expo/monote-simulator-app.txt"

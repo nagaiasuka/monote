@@ -17,6 +17,12 @@ if ! monote_node_is_supported; then
   fi
 fi
 
+# The permanent Xcode copy also has a compatible runtime after preparation.
+MONOTE_XCODE_NODE="$HOME/Developer/monote-xcode/.toolchain/node_modules/node/bin/node"
+if ! monote_node_is_supported && [ -x "$MONOTE_XCODE_NODE" ]; then
+  export PATH="$(dirname "$MONOTE_XCODE_NODE"):$PATH"
+fi
+
 # The runtime used during the initial build is available in this workspace session.
 if ! monote_node_is_supported && [ -x /tmp/monote-toolchain/node_modules/node/bin/node ]; then
   export PATH="/tmp/monote-toolchain/node_modules/node/bin:$PATH"
