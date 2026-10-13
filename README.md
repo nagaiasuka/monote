@@ -8,7 +8,7 @@ iPhone向け、ローカルファーストの読書メモ。Made for Mone.
 
 - Phase 1：Expo Development Build / Expo Router / strict TypeScript / SQLite / 基本画面。
 - Phase 2：書籍CRUD、永続表紙写真、現在の本、書籍・メモ検索、テキストメモCRUD、下書き保護、Swift音声入力、日本語オンデバイス文字起こし、独立発話の終了コマンド、無音終了。
-- Phase 3：Siri App Intentの設計のみ。現在のビルドにSiri開始アクションはない。
+- Phase 3：Siri App Intent / App Shortcutsの実機検証用プロトタイプを実装。登録とビルドは確認済み。Siri発話から録音・保存まで、ロック画面動作は検証中。
 - Phase 4：公開APIの調査と検証手順。Audibleの一時停止・復帰は音声割り込みによる候補であり、実機では未検証。巻き戻し・再生情報取得は未実装。
 - Phase 5：TestFlight配布・実機品質確認は未実施。
 
@@ -101,7 +101,7 @@ npm start
 4. 「音声入力を開始」で日本語の入力。終了する際はひと呼吸置いて「メモ終了」と発話し、その後も間を空ける。
 5. 無音終了、UI終了、55秒上限でも入力を終了。保存失敗・割り込みはホームの「保護された下書き」から確認できる。
 
-この段階では開始ボタンが必要。運転中の画面操作を前提に利用しない。Siri連携完了後もロック・Bluetoothの実機確認が必要。
+Siri開始は検証用プロトタイプ。先に本を選択し、マイク・音声認識の許可を済ませ、「Siri、モノートでメモ開始」を試す。ロック・Bluetooth・Audible復帰は検証中。運転中の画面操作を前提に利用しない。
 
 ## アーキテクチャ
 
@@ -134,7 +134,7 @@ SQLiteは`monote.db`。UUIDを主キーとし、ISO 8601 UTCの作成・更新�
 - Apple Speechの認識終了と負荷を考慮し、1回55秒に制限。端末・言語モデル・騒音・Bluetoothによる認識品質は実機確認が必要。
 - 終了語は「メモ終了」の独立発話を要求。文脈から引用と命令を完全に判別はできない。単純な本文suffix一致で自動終了しない。
 - Audibleの直接pause/play/seek、再生位置・章・タイトルの取得は行わない。音声割り込み後の復帰はAudibleとOSが判断する。
-- Apple Team設定、App Intent登録、ロック画面動作、音声経路、TestFlight配布は未完了。
+- App Intent登録と実機ビルドは確認済み。Siri開始の安定性、ロック画面動作、Bluetooth音声経路、Audible復帰、TestFlight配布は検証待ち。
 
 資料：[Audible実現可能性](docs/audible-feasibility.md)、[Siri設計](docs/siri-design.md)、[実機検証手順](docs/device-test-plan.md)、[開発結果](docs/implementation-report.md)。
 

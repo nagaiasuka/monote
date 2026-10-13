@@ -21,6 +21,7 @@
       "expo-router",
       "expo-sqlite",
       "expo-dev-client",
+      "./plugins/with-monote-intents.cjs",
       [
         "expo-image-picker",
         {

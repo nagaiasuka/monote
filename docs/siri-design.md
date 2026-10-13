@@ -1,8 +1,8 @@
-# Siri音声メモの設計（Phase 3、未実装）
+# Siri音声メモの設計と実機プロトタイプ（Phase 3）
 
 ## 実現可能性と最初の検証
 
-[App Intent](https://developer.apple.com/documentation/appintents/appintent)で開始アクションを公開できる。[実行モード](https://developer.apple.com/documentation/appintents/configuring-the-runtime-behavior-of-your-app-intents)を指定し、アプリをフォアグラウンドへ遷移させる方式を第一候補とする。現在の音声モジュールはアプリ内開始のみ実装。App Intentやショートカットの登録、Siri発話、ロック画面起動は未実装・未検証。
+[App Intent](https://developer.apple.com/documentation/appintents/appintent)で開始アクションを公開できる。[実行モード](https://developer.apple.com/documentation/appintents/configuring-the-runtime-behavior-of-your-app-intents)を指定し、アプリをフォアグラウンドへ遷移させる方式を第一候補とする。2026-10-13にApp IntentとApp Shortcutsのプロトタイプを実装。実機ビルドのMetadata.appintentsにStartMemoIntentと日本語フレーズの抽出を確認し、iPhoneへインストール済み。Siri発話・ロック画面からの録音は実機検証中。
 
 最初のゲートは「Siri終了後にマイクがMONOTEへ渡るか」「ロック中に解除を要求されるか」。Siriがアプリを開けたことだけではハンズフリー録音の成功としない。解除を要求されたら録音を開始せず、運転中のタッチ操作を促さない。完全なロック中の操作を保証しない。
 
@@ -54,3 +54,13 @@ Phase 2では音声セグメントの直前0.8秒以上の間、独立した「�
 現在はforegroundのみで録音し、背景移行で終了する。App Intentsは継続録音の権利を自動的に与えない。`AudioRecordingIntent`等は将来の検証候補であり、ロック画面や任意のバックグラウンド起動を保証する根拠にはしない。Background Modesは目的の実録音とAppleの制約に合致することを確認した場合のみ追加する。
 
 TestFlightには実機で権限拒否、Siri、音声経路、中断時の保護を確認してから進む。現段階で「運転中完全ハンズフリー対応」と表示・宣伝しない。
+
+## プロトタイプの実装
+
+- `native/MonoteIntents.swift`: アプリターゲットのIntent / App Shortcuts。30秒の期限付きUUID開始要求をUserDefaultsへ保存。
+- `plugins/with-monote-intents.cjs`: Prebuildでソースを登録し、起動時にApp Shortcutsを更新。既存Xcodeコピーへ適用可能。同じpluginを2回適用しても登録が重複しないことを確認。
+- `MonoteSpeech.consumeStartRequest`: アプリactive時に要求を読み出す。録音開始結果を確認してから一致するUUIDの要求だけを削除。保存処理中や非アクティブ中は要求を保持。期限切れ・不正要求は破棄。
+- `src/siri.tsx`: DB ready、現在の本、既存の権限、オンデバイス対応を確認。開始の合図が終わってから録音。権限ダイアログをハンズフリー開始中に要求しない。
+- `app/experiments.tsx`: 本体・Bluetoothの実際の入出力経路を表示する実機検証画面。
+
+プロトタイプはフォアグラウンドで録音する。Siriの呼びかけの成功、ロック中の解除要求、Bluetoothの切り替え、Audibleの自動復帰はまだ個別検証が必要。Siri占有後の音声セッションbusyに対する自動再試行は現段階では入れず、実機のエラーを観察する。

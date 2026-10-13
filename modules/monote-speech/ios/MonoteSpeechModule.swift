@@ -4,9 +4,9 @@ import Speech
 import UIKit
 
 private final class SpeechFeedbackDelegate: NSObject, AVSpeechSynthesizerDelegate {
-  var onEnd: (() -> Void)?
-  func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) { onEnd?() }
-  func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) { onEnd?() }
+  var onEnd: ((AVSpeechUtterance) -> Void)?
+  func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) { onEnd?(utterance) }
+  func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) { onEnd?(utterance) }
 }
 
 public class MonoteSpeechModule: Module {
@@ -35,16 +35,23 @@ public class MonoteSpeechModule: Module {
   private var stopError = ""
   private let synth = AVSpeechSynthesizer()
   private let feedbackDelegate = SpeechFeedbackDelegate()
+  private var feedbackPromise: Promise?
+  private var feedbackUtterance: AVSpeechUtterance?
 
   public func definition() -> ModuleDefinition {
     Name("MonoteSpeech")
     Events("onTranscript", "onLevel", "onEnd")
     OnCreate {
       self.synth.delegate = self.feedbackDelegate
-      self.feedbackDelegate.onEnd = { [weak self] in
+      self.feedbackDelegate.onEnd = { [weak self] utterance in
         DispatchQueue.main.async {
-          guard let self, !self.active && !self.starting && !self.finishing else { return }
-          try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+          guard let self, self.feedbackUtterance === utterance else { return }
+          if !self.active && !self.starting && !self.finishing {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+          }
+          self.feedbackPromise?.resolve()
+          self.feedbackPromise = nil
+          self.feedbackUtterance = nil
         }
       }
     }
@@ -54,6 +61,39 @@ public class MonoteSpeechModule: Module {
       return ["onDevice": recognizer?.supportsOnDeviceRecognition ?? false,
               "speech": SFSpeechRecognizer.authorizationStatus().rawValue,
               "microphone": AVAudioSession.sharedInstance().recordPermission.rawValue]
+    }.runOnQueue(.main)
+    AsyncFunction("consumeStartRequest") { () -> [String: Any]? in
+      guard UIApplication.shared.applicationState == .active else { return nil }
+      let defaults = UserDefaults.standard
+      guard let request = defaults.dictionary(forKey: "monote.startMemoRequest") else { return nil }
+      guard let id = request["id"] as? String, UUID(uuidString: id) != nil,
+            let timestamp = request["createdAt"] as? Double,
+            Date().timeIntervalSince1970 - timestamp >= 0,
+            Date().timeIntervalSince1970 - timestamp <= 30 else {
+        defaults.removeObject(forKey: "monote.startMemoRequest")
+        NSLog("[MONOTE intent] expired or invalid request discarded"); return nil
+      }
+      return request
+    }.runOnQueue(.main)
+    AsyncFunction("ackStartRequest") { (id: String) in
+      let defaults = UserDefaults.standard
+      if defaults.dictionary(forKey: "monote.startMemoRequest")?["id"] as? String == id {
+        defaults.removeObject(forKey: "monote.startMemoRequest")
+      }
+    }.runOnQueue(.main)
+    AsyncFunction("markStartStage") { (id: String, stage: String) in
+      guard UUID(uuidString: id) != nil,
+        ["received", "ready", "cue", "start", "started", "failed", "expired"].contains(stage) else { return }
+      UserDefaults.standard.set(stage, forKey: "monote.lastStartStage")
+      NSLog("[MONOTE intent] stage=%@", stage)
+    }.runOnQueue(.main)
+    AsyncFunction("diagnostics") { () -> [String: Any] in
+      let session = AVAudioSession.sharedInstance()
+      return ["active": self.active, "applicationState": UIApplication.shared.applicationState.rawValue,
+        "input": session.currentRoute.inputs.map { $0.portType.rawValue },
+        "output": session.currentRoute.outputs.map { $0.portType.rawValue },
+        "sampleRate": session.sampleRate, "category": session.category.rawValue,
+        "siriStage": UserDefaults.standard.string(forKey: "monote.lastStartStage") ?? "none"]
     }.runOnQueue(.main)
     AsyncFunction("start") { (id: String, bookId: String, createdAt: String, silenceEnabled: Bool, silenceSeconds: Double, promise: Promise) in
       guard !self.active && !self.starting && !self.finishing else {
@@ -102,14 +142,30 @@ public class MonoteSpeechModule: Module {
       let url = try self.draftDirectory().appendingPathComponent(id + ".json")
       if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
     }.runOnQueue(.main)
-    AsyncFunction("announce") { (text: String) throws in
-      guard !self.active && !self.starting && !self.finishing else { return }
-      let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playback, mode: .spokenAudio, options: [.mixWithOthers, .duckOthers])
-      try session.setActive(true)
-      let utterance = AVSpeechUtterance(string: text)
-      utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
-      self.synth.speak(utterance)
+    AsyncFunction("announce") { (text: String, promise: Promise) in
+      guard !self.active && !self.starting && !self.finishing else { promise.resolve(); return }
+      self.feedbackPromise?.resolve()
+      self.feedbackPromise = nil
+      self.feedbackUtterance = nil
+      self.synth.stopSpeaking(at: .immediate)
+      do {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playback, mode: .spokenAudio, options: [.mixWithOthers, .duckOthers])
+        try session.setActive(true)
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
+        self.feedbackPromise = promise
+        self.feedbackUtterance = utterance
+        self.synth.speak(utterance)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+          if let pending = self?.feedbackPromise, self?.feedbackUtterance === utterance {
+            self?.synth.stopSpeaking(at: .immediate)
+            self?.feedbackPromise = nil
+            self?.feedbackUtterance = nil
+            pending.reject("feedback", "音声の合図を再生できませんでした。")
+          }
+        }
+      } catch { promise.reject("feedback", error.localizedDescription) }
     }.runOnQueue(.main)
     OnDestroy {
       DispatchQueue.main.async { self.synth.stopSpeaking(at: .immediate); self.cleanup() }

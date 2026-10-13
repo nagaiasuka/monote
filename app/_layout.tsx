@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { migrate } from '../src/db/repository';
 import { StoreProvider, useStore } from '../src/store';
 import { Button, Busy, Screen, T, useTheme } from '../src/ui';
+import { SiriStartConsumer } from '../src/siri';
 class Boundary extends Component<{ children: ReactNode }, { error: string }> {
   state = { error: '' };
   static getDerivedStateFromError(error: Error) {
@@ -42,6 +43,7 @@ function Navigation() {
   return (
     <>
       <StatusBar style="auto" />
+      <SiriStartConsumer />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: c.bg },
@@ -68,6 +70,7 @@ function Navigation() {
         />
         <Stack.Screen name="settings" options={{ title: '設定' }} />
         <Stack.Screen name="drafts" options={{ title: '保護された下書き' }} />
+        <Stack.Screen name="experiments" options={{ title: '技術検証' }} />
       </Stack>
     </>
   );

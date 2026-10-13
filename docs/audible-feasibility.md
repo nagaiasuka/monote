@@ -4,7 +4,7 @@
 
 | 項目 | 公開APIによる判断 | 現在の実装・代替案 |
 | --- | --- | --- |
-| Audible再生中のメモ開始 | 非mixing音声セッションをアクティブにして入力する設計が可能。Siriが先に再生を中断する場合もあり、移行は実機確認が必要 | `.playAndRecord` / `.measurement`、Bluetooth HFPを許可。アプリ内開始を実装、Siri開始は未実装 |
+| Audible再生中のメモ開始 | 非mixing音声セッションをアクティブにして入力する設計が可能。Siriが先に再生を中断する場合もあり、移行は実機確認が必要 | `.playAndRecord` / `.measurement`、Bluetooth HFPを許可。アプリ内開始とSiri開始のプロトタイプを実装。Audible再生中は検証待ち |
 | 一時停止 | 他アプリにpauseを送る処理ではなく、iOSの音声割り込みを利用する。Audibleの応答は未確認 | `setActive(true)`。`mixWithOthers` / `duckOthers`は指定しない |
 | 再開 | 非アクティブ化時に復帰を通知できる。復帰するか、どの位置で復帰するかは受信アプリとOSの判断 | `setActive(false, options: .notifyOthersOnDeactivation)`。自動再開を保証しない |
 | 5〜10秒巻き戻し | 公開APIでAudibleの再生位置を変更する手段を確認できない | 設定7秒を保持するが適用しない。静止時にAudibleで戻す。運転中の画面操作を促さない |

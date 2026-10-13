@@ -103,7 +103,7 @@ export default function VoiceScreen() {
         </T>
       )}
       <T muted>
-        現在はアプリを開いた状態で使えます。Siri起動は開発準備中です。Audibleの巻き戻し・自動再開は保証されません。
+        Siri開始は実機検証用のプロトタイプです。ロック中の開始とAudibleの自動再開は確認中です。Audibleの巻き戻しは未対応です。
       </T>
       {voice.memoId && (
         <Nav

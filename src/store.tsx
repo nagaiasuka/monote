@@ -24,7 +24,7 @@ type Store = {
   reload(): Promise<void>;
   updateSettings(value: Settings): Promise<void>;
   voice: Voice;
-  startVoice(bookId: string): Promise<void>;
+  startVoice(bookId: string, handsFree?: boolean): Promise<boolean>;
   stopVoice(): Promise<void>;
   activeBookId: string | null;
 };
@@ -163,8 +163,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // The repository is stable for the lifetime of SQLiteProvider.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repo]);
-  async function startVoice(bookId: string) {
-    if (starting.current || active.current) return;
+  async function startVoice(bookId: string, handsFree = false) {
+    if (starting.current || active.current) return false;
     starting.current = true;
     setVoice({ ...idle, status: 'starting' });
     try {
@@ -183,6 +183,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         settings.silenceSeconds,
       );
       setVoice((v) => ({ ...v, status: 'recording' }));
+      return true;
     } catch (e) {
       const draft = active.current;
       if (draft && !draft.content) {
@@ -192,6 +193,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       active.current = null;
       setActiveBookId(null);
       setVoice({ ...idle, status: 'error', error: message(e) });
+      if (handsFree) await speech?.announce(message(e)).catch(() => undefined);
+      return false;
     } finally {
       starting.current = false;
     }

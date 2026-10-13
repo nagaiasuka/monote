@@ -18,5 +18,17 @@ declare class SpeechModule extends NativeModule<SpeechEvents> {
   recover(): Promise<Draft[]>;
   discard(id: string): Promise<void>;
   announce(text: string): Promise<void>;
+  consumeStartRequest(): Promise<{ id: string; createdAt: number } | null>;
+  ackStartRequest(id: string): Promise<void>;
+  markStartStage(id: string, stage: string): Promise<void>;
+  diagnostics(): Promise<{
+    active: boolean;
+    applicationState: number;
+    input: string[];
+    output: string[];
+    sampleRate: number;
+    category: string;
+    siriStage: string;
+  }>;
 }
 export const speech = requireOptionalNativeModule<SpeechModule>('MonoteSpeech');

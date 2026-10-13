@@ -42,8 +42,7 @@ export default function SettingsScreen() {
       <Card>
         <T>Siriでメモをはじめる</T>
         <T muted>
-          目標の呼びかけは「Siri、モノートでメモ開始」。現在のビルドにはApp
-          Intentを登録していません。ロック画面・車載機器からの起動は実機検証が必要です。
+          「Siri、モノートでメモ開始」で録音を始めるプロトタイプを用意しました。先に本の選択と権限許可を済ませてください。ロック画面・車載機器の動作は検証中です。
         </T>
       </Card>
       <Card>
@@ -141,6 +140,7 @@ export default function SettingsScreen() {
         </T>
       </Card>
       <Nav href="/drafts" title="保護された下書き" />
+      <Nav href="/experiments" title="実機の技術検証" />
       <T muted>MONOTE 0.1.0</T>
       <View style={{ alignItems: 'center', marginTop: 20 }}>
         <T muted>Made for Mone.</T>
