@@ -96,6 +96,12 @@ export default function VoiceScreen() {
       <T muted>
         ひと呼吸置いて「メモ終了」と話し、その後も少し間を空けてください。文中の言葉では終了しません。1回の入力は最長55秒です。
       </T>
+      {store.settings.silenceEnabled && (
+        <T muted>
+          話し始めるまで15秒待ちます。入力開始後は無音{store.settings.silenceSeconds}
+          秒で終了します。
+        </T>
+      )}
       <T muted>
         現在はアプリを開いた状態で使えます。Siri起動は開発準備中です。Audibleの巻き戻し・自動再開は保証されません。
       </T>

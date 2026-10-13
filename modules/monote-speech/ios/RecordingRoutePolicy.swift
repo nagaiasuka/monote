@@ -11,3 +11,12 @@ enum RecordingRoutePolicy {
     return !recordingInputs.isEmpty && Set(recordingInputs) != Set(currentInputs)
   }
 }
+
+enum RecordingSilencePolicy {
+  static func shouldStop(enabled: Bool, hasTranscript: Bool, elapsedSinceStart: Double,
+                         elapsedSinceSound: Double, silenceSeconds: Double) -> Bool {
+    guard enabled else { return false }
+    guard hasTranscript || elapsedSinceStart >= 15 else { return false }
+    return elapsedSinceSound >= silenceSeconds
+  }
+}

@@ -28,6 +28,7 @@ public class MonoteSpeechModule: Module {
   private var starting = false
   private var tapInstalled = false
   private var recordingInputs: [String] = []
+  private var hasTranscript = false
   private var generation = UUID()
   private var lastLevelEvent = Date.distantPast
   private var stopReason = "manual"
@@ -164,11 +165,17 @@ public class MonoteSpeechModule: Module {
     active = true
     finishing = false
     started = Date(); lastSound = started; commandSince = nil; commandBody = nil
+    hasTranscript = false
     NSLog("[MONOTE speech] recording started")
     task = recognizer.recognitionTask(with: request) { [weak self] result, error in
       DispatchQueue.main.async {
         guard let self, self.generation == currentGeneration, self.active else { return }
         if let result {
+          let text = result.bestTranscription.formattedString
+          if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self.hasTranscript = true
+            if self.draft?["content"] != text { self.lastSound = Date() }
+          }
           if !self.finishing || self.stopReason != "command" {
             self.draft?["content"] = result.bestTranscription.formattedString
           }
@@ -231,7 +238,9 @@ public class MonoteSpeechModule: Module {
         self.finish(reason: "command")
       } else if now.timeIntervalSince(self.started) >= 55 {
         self.finish(reason: "limit")
-      } else if self.silenceEnabled && now.timeIntervalSince(self.lastSound) >= self.silenceSeconds {
+      } else if RecordingSilencePolicy.shouldStop(enabled: self.silenceEnabled,
+          hasTranscript: self.hasTranscript, elapsedSinceStart: now.timeIntervalSince(self.started),
+          elapsedSinceSound: now.timeIntervalSince(self.lastSound), silenceSeconds: self.silenceSeconds) {
         self.finish(reason: "silence")
       }
     }

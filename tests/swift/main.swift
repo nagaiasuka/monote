@@ -23,3 +23,13 @@ checkRoute("no input route remains", 7, ["built-in"], [], true)
 checkRoute("unchanged configuration", 8, ["built-in"], ["built-in"], false)
 checkRoute("input configuration changed", 8, ["built-in"], ["usb"], true)
 print("RecordingRoutePolicy: 7 checks passed")
+func checkSilence(_ name: String, _ enabled: Bool, _ hasText: Bool, _ elapsed: Double, _ quiet: Double, _ expected: Bool) {
+  precondition(RecordingSilencePolicy.shouldStop(enabled: enabled, hasTranscript: hasText, elapsedSinceStart: elapsed, elapsedSinceSound: quiet, silenceSeconds: 5) == expected, name)
+}
+checkSilence("wait for the first utterance beyond the initial five seconds", true, false, 5, 5, false)
+checkSilence("startup grace still active", true, false, 14.9, 14.9, false)
+checkSilence("empty input can stop after the grace period", true, false, 15, 15, true)
+checkSilence("quiet speech with recent transcript is not silence", true, true, 20, 0.5, false)
+checkSilence("pause after speech uses configured duration", true, true, 20, 5, true)
+checkSilence("automatic silence stop disabled", false, false, 30, 30, false)
+print("RecordingSilencePolicy: 6 checks passed")
