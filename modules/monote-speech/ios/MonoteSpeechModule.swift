@@ -46,7 +46,8 @@ public class MonoteSpeechModule: Module {
         }
       }
     }
-    AsyncFunction("status") { () -> [String: Any] in
+    AsyncFunction("status") { () throws -> [String: Any] in
+      try self.validatePermissionDescriptions()
       let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
       return ["onDevice": recognizer?.supportsOnDeviceRecognition ?? false,
               "speech": SFSpeechRecognizer.authorizationStatus().rawValue,
@@ -57,6 +58,10 @@ public class MonoteSpeechModule: Module {
         promise.reject("busy", "音声入力はすでに開始しています。"); return
       }
       self.starting = true
+      do { try self.validatePermissionDescriptions() } catch {
+        self.starting = false
+        promise.reject("configuration", error.localizedDescription); return
+      }
       self.synth.stopSpeaking(at: .immediate)
       guard UIApplication.shared.applicationState == .active else {
         self.starting = false
@@ -215,6 +220,15 @@ public class MonoteSpeechModule: Module {
         self.finish(reason: "limit")
       } else if self.silenceEnabled && now.timeIntervalSince(self.lastSound) >= self.silenceSeconds {
         self.finish(reason: "silence")
+      }
+    }
+  }
+
+  private func validatePermissionDescriptions() throws {
+    for key in ["NSMicrophoneUsageDescription", "NSSpeechRecognitionUsageDescription"] {
+      guard let text = Bundle.main.object(forInfoDictionaryKey: key) as? String,
+            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        throw failure("音声入力に必要な権限設定がビルドに含まれていません。アプリの更新が必要です。")
       }
     }
   }

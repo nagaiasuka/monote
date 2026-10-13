@@ -19,6 +19,7 @@ npm ci --no-audit --no-fund
 if [ ! -f ios/MONOTE.xcodeproj/project.pbxproj ]; then
   npx expo prebuild --platform ios --no-install
 fi
+node "$MONOTE_SOURCE_ROOT/scripts/sync-ios-permissions.cjs" "$MONOTE_XCODE_ROOT/ios"
 cd ios
 LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install
 node "$MONOTE_SOURCE_ROOT/scripts/verify-ios-dependencies.cjs" "$MONOTE_XCODE_ROOT/ios"

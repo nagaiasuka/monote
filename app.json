@@ -26,7 +26,7 @@
         {
           "photosPermission": "本の表紙に使う写真を選択します。",
           "cameraPermission": false,
-          "microphonePermission": false
+          "microphonePermission": "話した言葉を読書メモとして記録するためにマイクを使用します。"
         }
       ]
     ],
