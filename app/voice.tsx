@@ -59,6 +59,24 @@ export default function VoiceScreen() {
         <T>{voice.content || '話した内容がここに表示されます。'}</T>
       </Card>
       {!!voice.error && <T>{voice.error}</T>}
+      {!!voice.endReason && (
+        <T muted>
+          終了理由：
+          {(
+            {
+              manual: '終了ボタン',
+              command: '「メモ終了」の発話',
+              silence: '無音を検出',
+              limit: '録音時間の上限',
+              recognizerEnded: '音声認識が終了',
+              routeChanged: 'マイクの切り替え',
+              interrupted: '音声の割り込み',
+              background: 'アプリが背景に移動',
+              error: '音声認識エラー',
+            } as Record<string, string>
+          )[voice.endReason] ?? voice.endReason}
+        </T>
+      )}
       {voice.status === 'recording' ? (
         <Button
           title="メモ終了"

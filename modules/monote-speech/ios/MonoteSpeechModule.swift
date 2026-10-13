@@ -27,6 +27,7 @@ public class MonoteSpeechModule: Module {
   private var finishing = false
   private var starting = false
   private var tapInstalled = false
+  private var recordingInputs: [String] = []
   private var generation = UUID()
   private var lastLevelEvent = Date.distantPast
   private var stopReason = "manual"
@@ -141,6 +142,7 @@ public class MonoteSpeechModule: Module {
     let input = engine.inputNode
     let format = input.outputFormat(forBus: 0)
     guard format.sampleRate > 0 && format.channelCount > 0 else { throw failure("マイクの接続を確認してください。") }
+    recordingInputs = session.currentRoute.inputs.map(\.uid)
     input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self, weak request] buffer, _ in
       request?.append(buffer)
       guard let samples = buffer.floatChannelData?[0] else { return }
@@ -162,6 +164,7 @@ public class MonoteSpeechModule: Module {
     active = true
     finishing = false
     started = Date(); lastSound = started; commandSince = nil; commandBody = nil
+    NSLog("[MONOTE speech] recording started")
     task = recognizer.recognitionTask(with: request) { [weak self] result, error in
       DispatchQueue.main.async {
         guard let self, self.generation == currentGeneration, self.active else { return }
@@ -189,6 +192,8 @@ public class MonoteSpeechModule: Module {
           }
         }
         if let error {
+          let failure = error as NSError
+          NSLog("[MONOTE speech] recognizer error domain=%@ code=%ld", failure.domain, failure.code)
           if !self.finishing { self.finish(reason: "error", error: error.localizedDescription) }
           self.complete()
         }
@@ -205,8 +210,16 @@ public class MonoteSpeechModule: Module {
       NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
         self?.finish(reason: "background", error: "アプリがバックグラウンドに移動したため音声入力を終了しました。")
       },
-      NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] _ in
-        self?.finish(reason: "routeChanged", error: "音声機器の接続が変わったため終了しました。")
+      NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] note in
+        guard let reason = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt else { return }
+        guard let self else { return }
+        let shouldStop = RecordingRoutePolicy.shouldStop(reason: reason,
+          recordingInputs: self.recordingInputs,
+          currentInputs: AVAudioSession.sharedInstance().currentRoute.inputs.map(\.uid))
+        NSLog("[MONOTE speech] route notification reason=%lu stop=%d", reason, shouldStop ? 1 : 0)
+        if shouldStop {
+          self.finish(reason: "routeChanged", error: "マイクの接続が変わったため終了しました。")
+        }
       }
     ]
     timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
@@ -235,6 +248,7 @@ public class MonoteSpeechModule: Module {
 
   private func finish(reason: String, error: String = "") {
     guard active && !finishing else { return }
+    NSLog("[MONOTE speech] finished reason=%@ elapsed=%.1f", reason, Date().timeIntervalSince(started))
     finishing = true; stopReason = reason; stopError = error
     timer?.invalidate(); timer = nil
     engine?.stop()
@@ -265,6 +279,7 @@ public class MonoteSpeechModule: Module {
     if tapInstalled { engine?.inputNode.removeTap(onBus: 0); tapInstalled = false }
     request?.endAudio(); task?.cancel()
     engine = nil; request = nil; task = nil; recognizer = nil
+    recordingInputs = []
     observers.forEach(NotificationCenter.default.removeObserver); observers = []
     try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
   }

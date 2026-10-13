@@ -12,3 +12,14 @@ check([SpeechWord(text: "メモ終了", start: 0, duration: 1), SpeechWord(text:
 check([SpeechWord(text: "メモ終了の方法", start: 0, duration: 2)], nil)
 check([SpeechWord(text: "メモ 終了。", start: 0, duration: 2)], "")
 print("StopCommand: \(count) checks passed")
+func checkRoute(_ name: String, _ reason: UInt, _ previous: [String], _ current: [String], _ expected: Bool) {
+  precondition(RecordingRoutePolicy.shouldStop(reason: reason, recordingInputs: previous, currentInputs: current) == expected, name)
+}
+checkRoute("startup category change must not stop recording", 3, [], ["built-in"], false)
+checkRoute("speaker override without microphone change", 4, ["built-in"], ["built-in"], false)
+checkRoute("output-only Bluetooth connection", 1, ["built-in"], ["built-in"], false)
+checkRoute("Bluetooth microphone disconnected", 2, ["bluetooth"], ["built-in"], true)
+checkRoute("no input route remains", 7, ["built-in"], [], true)
+checkRoute("unchanged configuration", 8, ["built-in"], ["built-in"], false)
+checkRoute("input configuration changed", 8, ["built-in"], ["usb"], true)
+print("RecordingRoutePolicy: 7 checks passed")

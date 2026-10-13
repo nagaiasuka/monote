@@ -11,6 +11,7 @@ type Voice = {
   level: number;
   error: string;
   memoId?: string;
+  endReason?: string;
 };
 type Store = {
   repo: Repository;
@@ -108,6 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               content: event.content,
               level: 0,
               error: `${event.error} 入力内容を下書きに残しました。`,
+              endReason: event.reason,
             });
             await speech
               ?.announce('音声入力を終了しました。下書きを残しました。')
@@ -116,7 +118,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const id = await repo.finishDraft(draft.id, event.content);
             // Native cleanup failure must not undo a successful SQLite commit.
             await speech?.discard(id).catch(() => undefined);
-            setVoice({ status: 'saved', content: event.content, level: 0, error: '', memoId: id });
+            setVoice({
+              status: 'saved',
+              content: event.content,
+              level: 0,
+              error: '',
+              memoId: id,
+              endReason: event.reason,
+            });
             await speech?.announce('メモを保存しました。').catch(() => undefined);
           } else {
             await repo.deleteDraft(draft.id);
@@ -125,6 +134,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               ...idle,
               status: 'error',
               error: '音声を認識できませんでした。メモは保存していません。',
+              endReason: event.reason,
             });
             await speech?.announce('音声を認識できませんでした。').catch(() => undefined);
           }
